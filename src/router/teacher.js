@@ -10,13 +10,7 @@ router.get("/teachers/me", teacherAuth, (req, res) => {
 });
 
 router.get("/teachers/me/students", teacherAuth, async (req, res) => {
-    await req.teacher.populate({
-        path: "students.belongsTo",
-        // populate: {
-        //     path: "belong",
-        //     model: "Teacher"
-        // }
-    })
+    await req.teacher.populate("students");
     res.status(200).send(req.teacher.students);
 });
 

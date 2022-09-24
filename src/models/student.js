@@ -37,9 +37,9 @@ const stdSchema = new mongoose.Schema({
     }]
 });
 
-stdSchema.virtual("teacher", {
+stdSchema.virtual("teachers", {
     ref: "Teacher",
-    localField: "belongsTo",
+    localField: "belongsTo.belong",
     foreignField: "_id"
 });
 
@@ -65,6 +65,7 @@ stdSchema.methods.toJSON = function(){
     const stdObject = std.toObject();
     delete stdObject.password;
     delete stdObject.tokens;
+    delete stdObject.belongsTo;
     return stdObject;
 }
 

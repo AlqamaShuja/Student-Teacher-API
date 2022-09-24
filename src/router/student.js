@@ -1,14 +1,16 @@
 const router = require("express").Router();
 const Student = require("../models/student");
+const Teacher = require("../models/teacher");
 const stdAuth = require("../middleware/student");
 
 
-router.get("/students/me", stdAuth, (req, res) => {
-    res.status(200).send({ student: req.student, token: req.token });
+router.get("/students/me", stdAuth, async (req, res) => {
+    await req.student.populate("teachers");
+    res.status(200).send({ student: req.student, token: req.token, teacher: req.student.teachers });
 }, (error, req, res, next) => {
     if(error) res.status(400).send({ error });
 });
-
+// , { strictPopulate: false }
 
 router.post("/students", async (req, res) => {
     try {
@@ -74,11 +76,21 @@ router.get("/students/logoutAll", stdAuth, async (req, res) => {
 router.post("/students/addTeacher", stdAuth, async (req, res) => {
     try {
         const belong = req.body.id;
-        const isAlreadyEnrolled = req.student.belongsTo.every(b => b.belong === belong);
+        // const isAlreadyEnrolled = req.student.belongsTo.every(b => b.includes(belong));
+        let isAlreadyEnrolled = true;
+        req.student.belongsTo.forEach(b => {
+            if(b.belong == belong) {
+                isAlreadyEnrolled = false;
+            }
+        });
         if(!isAlreadyEnrolled){
             return res.status(400).send({ message: "Already Enrolled with this teacher" });
         }
+        const teacher = await Teacher.findById(belong)
+        if(!teacher) return res.status(400).send({ message: "Teacher does not exist" });
         req.student.belongsTo = req.student.belongsTo.concat({ belong });
+        teacher.enrolledStudents = teacher.enrolledStudents.concat({ std_enroll: req.student._id });
+        await teacher.save();
         await req.student.save();
         res.send({ message: "Successfully Enrolled with this teacher" });
     } catch (error) {
@@ -86,15 +98,15 @@ router.post("/students/addTeacher", stdAuth, async (req, res) => {
     }
 });
 
-router.post("/students/removeTeacher", stdAuth, async (req, res) => {
-    try {
-        const belong = req.body.id;
-        req.student.belongsTo = req.student.belongsTo.filter(teacherId => teacherId.belong != belong);
-        await req.student.save();
-        res.send({ message: "Unenrolled" });
-    } catch (error) {
-        res.status(401).send({ error: "Unauthorized" });
-    }
-});
+// router.post("/students/removeTeacher", stdAuth, async (req, res) => {
+//     try {
+//         const belong = req.body.id;
+//         req.student.belongsTo = req.student.belongsTo.filter(teacherId => teacherId.belong != belong);
+//         await req.student.save();
+//         res.send({ message: "Unenrolled" });
+//     } catch (error) {
+//         res.status(401).send({ error: "Unauthorized" });
+//     }
+// });
 
 module.exports = router;

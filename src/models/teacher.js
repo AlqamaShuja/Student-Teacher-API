@@ -28,6 +28,12 @@ const teacherSchema = new mongoose.Schema({
             type: String,
             required: true
         }
+    }],
+    enrolledStudents: [{
+        std_enroll : {
+            type: mongoose.Schema.Types.ObjectId,
+            required: true
+        }
     }]
 });
 
@@ -35,7 +41,7 @@ const teacherSchema = new mongoose.Schema({
 teacherSchema.virtual("students", {
     ref: "Student",
     localField: "_id",
-    foreignField: "belongsTo"
+    foreignField: "belongsTo.belong"
 });
 
 teacherSchema.methods.generateAuthToken = async function(){
@@ -60,6 +66,7 @@ teacherSchema.methods.toJSON = function(){
     const teacherObject = teacher.toObject();
     delete teacherObject.password;
     delete teacherObject.tokens;
+    delete teacherObject.enrolledStudents;
     return teacherObject;
 }
 
